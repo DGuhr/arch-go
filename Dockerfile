@@ -11,14 +11,19 @@ RUN ln -s /usr/local/go/bin/go /usr/local/bin/go
 WORKDIR /workspace
 
 COPY . ./
+RUN CGO_ENABLED=0 GO111MODULE=on
 
-RUN go mod vendor 
+RUN go mod tidy
 RUN go build -o arch-go .
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.1
+COPY --from=builder /usr/local/go/ /usr/local/go/
+RUN ln -s /usr/local/go/bin/go /usr/local/bin/go
+RUN CGO_ENABLED=0 GO111MODULE=on
+RUN mkdir /.cache && chmod 777 /.cache
+RUN mkdir /go && chmod 777 /go
 
 COPY --from=builder /workspace/arch-go /usr/local/bin/
-
 USER 1001
 ENTRYPOINT ["/usr/local/bin/arch-go"]
 
